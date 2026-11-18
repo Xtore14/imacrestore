@@ -1,0 +1,9 @@
+How to build IPSW:
+
+1. Copy the template files from the "sample-ipsw" folder into a new working folder.
+2. Edit "BuildManifest.json" and "RestoreInfo.json" with your target Mac details (SMBIOS, BoardID, OS version).
+3. Add your macOS recovery files ("BaseSystem.dmg", "BaseSystem.chunklist", etc.) into the same folder.
+4. Select all the files INSIDE the folder (do NOT compress the outer folder itself) and compress them into a standard .zip archive.
+5. Rename the archive extension from ".zip" to ".ipsw" (e.g., iMac14,1_10.15.7_Restore.ipsw).
+
+Note: Make sure "BuildManifest.json" is located at the root of the archive, not inside a subfolder.
