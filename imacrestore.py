@@ -1,6 +1,5 @@
-# iMacRestore v1.0.0
-# A tool to restore customs IPSWs for Intel-based Macs
-# Currently device supported: iMac14,1 (iMac Late 2013 (21.5 inches), 2,7 GHz)
+# iMacRestore v1.0.1
+# Restore tool for intel-based macs
 
 import os
 import sys
@@ -63,7 +62,6 @@ def gpt_disk(target_disk, mode):
 
   elif sys.platform == "darwin":
     if mode == "USBDrive":
-      # Crea EFI + 1 partizione principale JHFS+ su tutto il disco
       subprocess.run(
           [
               "diskutil",
@@ -77,7 +75,6 @@ def gpt_disk(target_disk, mode):
           check=True,
       )
     elif mode == "TargetDiskMode":
-      # Crea EFI + Macintosh HD (spazio rimanente) + BaseSystem (2.5 GB)
       subprocess.run(
           [
               "diskutil",
@@ -105,7 +102,6 @@ def run_backup(base_dir, mode, os_version):
   with open(backup_info_path, "r") as f:
     data = json.load(f)
 
-  # 1. Controlla se è abilitato e se siamo in Target Disk Mode
   if not data.get("enabled", False) or mode != "TargetDiskMode":
     return
 
@@ -120,14 +116,11 @@ def run_backup(base_dir, mode, os_version):
     print("Skipping backup...")
     return
 
-  # 2. Chiede diskname e username per compilare il percorso del JSON
   diskname = input("Enter Mac Volume Name (e.g., Macintosh HD): ").strip()
   username = input("Enter macOS Username to backup: ").strip()
 
-  # Converte "10.15.7" o "11.7.10" in una tupla di numeri, es. (10, 15, 7) o (11, 7, 10)
   ver_tuple = tuple(map(int, os_version.split(".")))
 
-  # Da 10.15 in poi (inclusi 11, 12, 13, 14, 15...) usa il volume "- Data"
   if ver_tuple >= (10, 15):
     template = ibackup.get("BackupDir10.15")
   else:
@@ -135,7 +128,6 @@ def run_backup(base_dir, mode, os_version):
 
   source_path = template.format(diskname=diskname, username=username)
 
-  # Su Windows adatta il percorso se l'utente usa un driver con lettera di unità
   if os.name == "nt" and not os.path.exists(source_path):
     drive_letter = input(
         "Enter Windows Drive Letter for iMac volume (e.g., D): "
@@ -148,7 +140,6 @@ def run_backup(base_dir, mode, os_version):
       sys.exit(0)
     return
 
-  # 3. Comprime in backup/
   os.makedirs("backup", exist_ok=True)
   timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
   zip_name = os.path.join("backup", f"iRestoreBackup_{username}_{timestamp}.zip")
@@ -172,19 +163,15 @@ import shutil
 def flash_basesystem(bs_dmg, target_disk, mode):
   print(f"\nFlashing {os.path.basename(bs_dmg)} to {target_disk} ({mode})...")
 
-  # Determina il numero della partizione di destinazione (2 per USB, 3 per Target Disk Mode)
   part_num = 2 if mode == "USBDrive" else 3
 
   if sys.platform == "darwin":
-    # Normalizza il percorso del disco su macOS (es. "disk2" -> "/dev/disk2")
     if not target_disk.startswith("/dev/"):
       target_disk = f"/dev/{target_disk}"
     target_part = f"{target_disk}s{part_num}"
 
-    # Prepara il checksum dell'immagine per asr (ignora eventuali errori su DMG di sola lettura)
     subprocess.run(["asr", "imagescan", "--source", bs_dmg], check=False)
 
-    # Smonta il volume target prima del ripristino per evitare errori di "Resource busy"
     subprocess.run(["diskutil", "unmount", target_part], check=False)
 
     print(f"Restoring image to {target_part} via Apple Software Restore...")
@@ -204,7 +191,6 @@ def flash_basesystem(bs_dmg, target_disk, mode):
     )
 
   else:
-    # Su Windows e Linux estraiamo prima il filesystem HFS+ grezzo dal .dmg tramite 7-Zip
     raw_dir = os.path.join("extracted", "raw_image")
     if os.path.exists(raw_dir):
       shutil.rmtree(raw_dir)
@@ -216,13 +202,11 @@ def flash_basesystem(bs_dmg, target_disk, mode):
         else "7z"
     )
     print("Decompressing Apple image...")
-    # Estrae tutti i file interni al DMG (alcuni BaseSystem contengono *.hfs, altri *.img o file senza estensione)
     subprocess.run(
         [seven_zip, "e", "-tDmg", bs_dmg, f"-o{raw_dir}", "-y"],
         check=True,
     )
 
-    # Trova il file HFS+ estratto (è sempre il file più grande estratto dal DMG)
     hfs_file = None
     max_size = 0
     for f in os.listdir(raw_dir):
@@ -236,7 +220,6 @@ def flash_basesystem(bs_dmg, target_disk, mode):
       sys.exit(1)
 
     if os.name == "nt":
-      # Su Windows troviamo l'offset in byte della partizione target tramite PowerShell
       disk_num = target_disk.replace("\\\\.\\PhysicalDrive", "")
       ps_cmd = (
           f"(Get-Partition -DiskNumber {disk_num} | Sort-Object"
@@ -249,20 +232,17 @@ def flash_basesystem(bs_dmg, target_disk, mode):
       print(
           f"Writing system image to {target_disk} at offset {offset} bytes..."
       )
-      # Scrittura diretta a blocchi (multipli di 4096 byte obbligatori su Windows raw disk)
       with open(hfs_file, "rb") as src, open(target_disk, "r+b") as dst:
         dst.seek(offset)
         while True:
-          chunk = src.read(1024 * 1024)  # 1 MB per volta
+          chunk = src.read(1024 * 1024)
           if not chunk:
             break
-          # Allinea l'ultimo blocco a 4096 byte se necessario
           if len(chunk) % 4096 != 0:
             chunk += b"\x00" * (4096 - (len(chunk) % 4096))
           dst.write(chunk)
 
     elif sys.platform.startswith("linux"):
-      # Su Linux gestisce sia /dev/sdX2 che /dev/nvme0n1p2
       sep = "p" if target_disk[-1].isdigit() else ""
       target_part = f"{target_disk}{sep}{part_num}"
       print(f"Writing raw image to {target_part}...")
@@ -371,7 +351,6 @@ def Restore():
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
       zip_ref.extractall(extract_folder)
 
-    # Trova automaticamente la cartella principale estratta
     base_dir = None
     for root_dir, dirs, files in os.walk(extract_folder):
       if "BuildManifest.json" in files:
@@ -393,7 +372,6 @@ def Restore():
     with open(manifest_path, "r") as f:
       manifest = json.load(f)
 
-    # Estrazione dati chiave
     model = manifest.get("SMBIOS")
     version = manifest.get("Version")
     build = manifest.get("BuildID")
@@ -401,11 +379,9 @@ def Restore():
         "SupportedRestoreTargets", []
     )
 
-    # Percorsi dei file DMG e Chunklist
     bs_dmg = os.path.join(base_dir, manifest["RestoreInfo"]["BaseSystem"])
     bs_cl = os.path.join(base_dir, manifest["RestoreInfo"]["Chunklist"])
 
-    # Verifica integrità tramite chunklist se richiesta in RestoreInfo.json
     if restore_info["iMacRestoreInfo"].get("checkipswvalidate"):
       print("Verifying IPSW integrity...")
 
@@ -425,7 +401,6 @@ def Restore():
 
     print(f"\nIPSW for: {model}\nSystem Version: {version} ({build})\n")
 
-    # Scelta del tipo di target basata su RestoreInfo.json
     target_type = input(
         "Select Restore Target:\n\n1. USB Drive (min 16gb)\n2. Target Mode"
         " Disk\n\n> "
@@ -448,13 +423,10 @@ def Restore():
       wait(1)
       sys.exit(0)
 
-    # Selezione del disco fisico (cross-platform)
     target_disk = select_target_disk()
 
-    # Backup opzionale PRIMA della formattazione
     run_backup(base_dir, mode, version)
 
-    # Conferma finale prima di cancellare il disco
     print(f"\n[!] WARNING: All data on {target_disk} ({mode}) will be erased!")
     confirm = input("Type 'YES' to continue: ")
 
@@ -484,7 +456,6 @@ elif menu_input == "2":
     wait(3)
     sys.exit(0)
 elif menu_input == "3":
-    # os.system("cls" if os.name == "nt" else "clear")
     print("\n\nHave a nice day!")
     wait(0.5)
     sys.exit(0)
