@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.ipsw
+*.dmg
+*.chunklist
+.DS_Store
