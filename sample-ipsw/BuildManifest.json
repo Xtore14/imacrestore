@@ -1,0 +1,19 @@
+{
+    "SMBIOS": "insert_your_smbios",
+    "Version": "insert_your_version",
+    "BuildID": "insert_your_build",
+    "Type": "Restore",
+    "arch": "insert_your_arch",
+    "RestoreInfo": {
+        "BaseSystem": "BaseSystem.dmg",
+        "Chunklist": "BaseSystem.chunklist",
+        "InternetRecovery": false,
+        "Diagnostics": {
+            "BoardID": "Mac-XXXXXXXXXXXXXXXX",
+            "AppleDiagnostics": "AppleDiagnostics.dmg",
+            "Chunklist": "AppleDiagnostics.chunklist"
+        }
+    },
+    "CanRestoreUSB": true,
+    "UniversalRestore": false
+}

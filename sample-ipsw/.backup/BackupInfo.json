@@ -1,0 +1,11 @@
+{
+    "CloudBackup": false,
+    "BackupType": "UserData",
+    "iRestoreBackup": {
+        "Version": "1.0.0b1",
+        "Status": "Experimental",
+        "BackupDir10.15": "/Volumes/{diskname} - Data/Users/{username}/",
+        "BackupDirDefault": "/Volumes/{diskname}/Users/{username}/"
+    },
+    "enabled": false
+}

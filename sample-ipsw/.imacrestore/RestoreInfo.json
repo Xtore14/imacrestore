@@ -1,0 +1,18 @@
+{
+    "iMacRestoreInfo": {
+        "Version": "1.0.0",
+        "Action": "Restore",
+        "Model": "insert_your_model",
+        "MacOS": "insert_your_build",
+        "SupportedRestoreTargets": ["USBDrive", "TargetDiskMode"],
+        "USBSupport": true,
+        "verifyrestore": true,
+        "checkipswvalidate": false,
+        "RequireNetworkToRecover": false
+    },
+    "IPSWInfo": {
+        "InternetRecovery": false,
+        "OSVersion": "insert_your_version",
+        "APFS": false
+    }
+}
