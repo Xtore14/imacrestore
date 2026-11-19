@@ -16,7 +16,7 @@ iMacRestore is a lightweight Python utility designed to simplify the recovery an
 
 ---
 
-## Supported Devices
+## Tested Devices
 
 | Model | Identifier | Board ID |
 | :--- | :--- | :--- |
