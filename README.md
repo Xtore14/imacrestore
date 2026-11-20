@@ -42,7 +42,7 @@ iMac14,1_10.15.7_19H15_Restore.ipsw
 ## Getting Started
 
 ### Prerequisites
-* **Python 3.8+**
+* **Python 3.9+**
 * `tkinter` (included by default on Windows and macOS; on Debian/Ubuntu run `sudo apt install python3-tk`)
 
 ### Usage
